@@ -1,11 +1,11 @@
 import AlphaZero.GI
 using StaticArrays
 
-const BOARD_SIDE = 6
+const BOARD_SIDE = 5
 const NUM_POSITIONS = BOARD_SIDE ^ 2
 
-const NUM_COLS = 6
-const NUM_ROWS = 6
+const NUM_COLS = 5
+const NUM_ROWS = 5
 const NUM_CELLS = NUM_COLS * NUM_ROWS
 
 const Player = Int
@@ -81,7 +81,7 @@ function get_valid_moves(g::GameEnv, current_player)
             found = false
 
                 # Search for empty squares.
-            if g.INITIAL_BOARD[x,y] == 0
+            if g.INITIAL_BOARD[x,y] == Nothing
 
                     # Search in all 8 directions for a square of the opponent.
                 for i in 1:length(g.directions)
