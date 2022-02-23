@@ -1,16 +1,23 @@
 import AlphaZero.GI
 using StaticArrays
 
-const BOARD_SIDE = 3
+const BOARD_SIDE = 6
 const NUM_POSITIONS = BOARD_SIDE ^ 2
 
-const Player = Bool
-const WHITE = true
-const BLACK = false
+const NUM_COLS = 6
+const NUM_ROWS = 6
+const NUM_CELLS = NUM_COLS * NUM_ROWS
+
+const Player = Int
+const WHITE = 1
+const BLACK = -1
+
+directions = [(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)]
 
 const Cell = Union{Nothing, Player}
-const Board = SVector{NUM_POSITIONS, Cell}
-const INITIAL_BOARD = Board(repeat([nothing], NUM_POSITIONS))
+Board = SMatrix{NUM_COLS, NUM_ROWS, Cell, NUM_CELLS}
+INITIAL_BOARD = [zeros(Int, 6, 2)  ;; zeros(Int, 2, 2) ;[ 2 1] ;[1 2];  zeros(Int, 2, 2) ;; zeros(Int, 6, 2)]
+# INITIAL_BOARD[15]=WHITE
 const INITIAL_STATE = (board=INITIAL_BOARD, curplayer=WHITE)
 
 # TODO: we could have the game parametrized by grid size.
@@ -50,13 +57,132 @@ const ALIGNMENTS =
   [map(pos_of_xy, al) for al in XY]
 end end
 
-function has_won(g::GameEnv, player)
-  any(ALIGNMENTS) do al
-    all(al) do pos
-      g.board[pos] == player
+function get_valid_moves(g::GameEnv, current_player)
+        """Returns a list of moves along with their validity.
+
+        Searches the board for valid sandwich moves.
+
+        Returns:
+            A list containing moves as (validity, row, column, direction).
+        """
+    valid_moves = []
+    pl=1
+        # pl = current_player
+        # NUM_COLUMNS=6
+    side = NUM_ROWS
+
+    for x in 1:NUM_ROWS
+        for y in 1:NUM_COLS
+            print(y)
+            found = false
+
+                # Search for empty squares.
+            if g.INITIAL_BOARD[x,y] == 0
+
+                    # Search in all 8 directions for a square of the opponent.
+                for i in 1:length(g.directions)
+                    
+                    d = g.directions[i]
+
+                    row = x + d[0]
+                    col = y + d[1]
+
+                    if row < side && col < side
+                        if g.INITIAL_BOARD[row,col] == -pl
+                            found_valid_move = false
+                            count = 2
+
+                                # Keep searching for a sandwich condition.
+                            while True
+                                row = x + d[0] * count
+                                col = y + d[1] * count
+
+                                if 0 <= row < side && 0 <= col < side
+                                    if g.INITIAL_BOARD[row,col] == pl
+                                        append!(valid_moves,[(1, x, y, d)])
+                                        found_valid_move = True
+                                        break
+                                    end
+                                    
+                                else
+                                    break
+                                end
+
+                                count += 1
+                            end
+
+                            if found_valid_move
+                                found = true
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end
     end
-  end
+
+            if not found
+                append!(valid_moves,[(0,None,None,None)])
+            end
+
+    return valid_moves
 end
+
+function has_won(g::GameEnv, player)
+    player_a = player
+    player_b = -player
+
+    player_a_moves = get_valid_moves(player_a)
+    player_b_moves = get_valid_moves(player_b)
+
+    player_a_valid_count = 0
+    player_b_valid_count = 0
+
+            # Check if both players can't play any more moves.
+    for x in player_a_moves
+        if x[1]==1
+            player_a_valid_count+=1
+        end
+    end
+    for x in player_b_moves
+        if x[1]==1
+            player_b_valid_count+=1
+        end
+    end
+    p_a=p_b=p_e=0
+    if player_a_valid_count == 0 || player_b_valid_count == 0
+        # unique, piece_count = unique(g.board,return_counts=True)
+        for x in ACTIONS
+            if x==player_a
+                p_a+=1
+            elseif x==player_b
+                p_b+=1
+            else
+                p_e+=1
+            end
+        end
+
+                # Check for the player with the most number of pieces.
+        if p_a > p_b
+            return  1
+        elseif p_a == p_b
+            return  2
+        else
+            return  -1
+        end
+    else
+        return  0
+    end
+end
+
+# function has_won(g::GameEnv, player)
+#   any(ALIGNMENTS) do al
+#     all(al) do pos
+#       g.board[pos] == player
+#     end
+#   end
+# end
 
 #####
 ##### Game API
@@ -170,16 +296,25 @@ end
 #####
 ##### Interaction API
 #####
+GI.action_string(::GameSpec, a) = string(a)
 
-function GI.action_string(::GameSpec, a)
-  string(Char(Int('A') + a - 1))
+function GI.parse_action(g::GameSpec, str)
+  try
+    p = parse(Int, str)
+    1 <= p <= NUM_COLS ? p : nothing
+  catch
+    nothing
+  end
 end
+# function GI.action_string(::GameSpec, a)
+#   string(Char(Int('A') + a - 1))
+# end
 
-function GI.parse_action(::GameSpec, str)
-  length(str) == 1 || (return nothing)
-  x = Int(uppercase(str[1])) - Int('A')
-  (0 <= x < NUM_POSITIONS) ? x + 1 : nothing
-end
+# function GI.parse_action(::GameSpec, str)
+#   length(str) == 1 || (return nothing)
+#   x = Int(uppercase(str[1])) - Int('A')
+#   (0 <= x < NUM_POSITIONS) ? x + 1 : nothing
+# end
 
 function read_board(::GameSpec)
   n = BOARD_SIDE
