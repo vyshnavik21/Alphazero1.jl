@@ -296,25 +296,25 @@ end
 #####
 ##### Interaction API
 #####
-GI.action_string(::GameSpec, a) = string(a)
+# GI.action_string(::GameSpec, a) = string(a)
 
-function GI.parse_action(g::GameSpec, str)
-  try
-    p = parse(Int, str)
-    1 <= p <= NUM_COLS ? p : nothing
-  catch
-    nothing
-  end
+# function GI.parse_action(g::GameSpec, str)
+#   try
+#     p = parse(Int, str)
+#     1 <= p <= NUM_COLS ? p : nothing
+#   catch
+#     nothing
+#   end
+# end
+function GI.action_string(::GameSpec, a)
+  string(Char(Int('A') + a - 1))
 end
-# function GI.action_string(::GameSpec, a)
-#   string(Char(Int('A') + a - 1))
-# end
 
-# function GI.parse_action(::GameSpec, str)
-#   length(str) == 1 || (return nothing)
-#   x = Int(uppercase(str[1])) - Int('A')
-#   (0 <= x < NUM_POSITIONS) ? x + 1 : nothing
-# end
+function GI.parse_action(::GameSpec, str)
+  length(str) == 1 || (return nothing)
+  x = Int(uppercase(str[1])) - Int('A')
+  (0 <= x < NUM_POSITIONS) ? x + 1 : nothing
+end
 
 function read_board(::GameSpec)
   n = BOARD_SIDE
