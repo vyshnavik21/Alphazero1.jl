@@ -14,9 +14,13 @@ const BLACK = -1
 
 directions = [(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)]
 
+
+
+
 const Cell = Union{Nothing, Player}
 Board = SMatrix{NUM_COLS, NUM_ROWS, Cell, NUM_CELLS}
-INITIAL_BOARD = [zeros(Int, 6, 2)  ;; zeros(Int, 2, 2) ;[ 2 1] ;[1 2];  zeros(Int, 2, 2) ;; zeros(Int, 6, 2)]
+const INITIAL_BOARD = Board(repeat([nothing], NUM_POSITIONS))
+# INITIAL_BOARD = [zeros(Int, 6, 2)  ;; zeros(Int, 2, 2) ;[ 2 1] ;[1 2];  zeros(Int, 2, 2) ;; zeros(Int, 6, 2)]
 # INITIAL_BOARD[15]=WHITE
 const INITIAL_STATE = (board=INITIAL_BOARD, curplayer=WHITE)
 
